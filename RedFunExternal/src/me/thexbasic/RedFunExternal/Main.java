@@ -52,15 +52,21 @@ public class Main extends JavaPlugin
     public boolean hasPermission(Player p, String cmd, int type)
     {
         boolean allowed = false;
-        String perm = "redfun." + cmd;
-        if(type >= 0)
-        {
-            perm += "." + type;
+        if(p == null) {
+            allowed = true;
         }
-        allowed = p.hasPermission(perm);
-        if(!allowed)
+        else
         {
-            p.sendMessage(noPermission.replace("<perm>", perm));
+            String perm = "redfun." + cmd;
+            if(type >= 0)
+            {
+                perm += "." + type;
+            }
+            allowed = p.hasPermission(perm);
+            if(!allowed)
+            {
+                p.sendMessage(noPermission.replace("<perm>", perm));
+            } 
         }
         return allowed;
     }
@@ -123,18 +129,16 @@ public class Main extends JavaPlugin
             messages.put(opfer.getName(), msg);
             addPlayerSpam(opfer.getName(), intervall);
             sender.sendMessage(args[0] + " wird jetzt zugespammt.");
-// REMOTESAY
         }
+        
+        // REMOTESAY
         else if(cmd.getName().equalsIgnoreCase("remotesay"))
         {
-            if(sender instanceof Player)
+            if(!hasPermission(p, cmd.getName(), -1))
             {
-                if(!hasPermission(p, cmd.getName(), -1))
-                {
-                    return true;
-                }
+                return true;
             }
-            if(args.length > 0)
+            if(args.length > 1)
             {
                 if(getServer().getPlayer(args[0]).isOnline())
                 {
@@ -153,10 +157,6 @@ public class Main extends JavaPlugin
                             {
                                 getServer().broadcastMessage(String.format(event.getFormat(), event.getPlayer().getDisplayName(), event.getMessage()));
                             }
-                            else
-                            {
-                                return;
-                            }
                         }
                     });
                     return true;
@@ -168,15 +168,15 @@ public class Main extends JavaPlugin
             }
             else
             {
-                sender.sendMessage("/remotesay <player> <text>");
+                return false;
             }
-// RANDOMTP
-        } else if(cmd.getName().equalsIgnoreCase("randomtp")) {
-            if(sender instanceof Player) {
-                if(!sender.hasPermission("redfun.randomtp")) {
-                    sender.sendMessage("§7Du hast §6keine Berechtigung §7dafür!");
-                    return false;
-                }
+        }
+        
+        // RANDOMTP
+        else if(cmd.getName().equalsIgnoreCase("randomtp"))
+        {
+            if(!hasPermission(p, cmd.getName(), -1)) {
+                return true;
             }
             if(args.length == 2){
                 if(args[0].equalsIgnoreCase("onaction")) {
@@ -184,7 +184,6 @@ public class Main extends JavaPlugin
                     sender.sendMessage(args[1] + "Wird nun zufällig Teleportiert. (A)");
                     return true;
                 }
-                return true;
             } else if(args.length == 3) {
                 if(getServer().getPlayer(args[1]).isOnline()) {
                     if(args[0].equalsIgnoreCase("ontimer")) {
@@ -196,63 +195,73 @@ public class Main extends JavaPlugin
                     sender.sendMessage("Spieler offline oder nicht gefunden.");
                     return true;
                 }
-            } else {
-                sender.sendMessage("/randomtp [mode] <player>");
-                sender.sendMessage("Available mode's: onaction, ontimer");
             }
-//FIXLOCATION
-        } else if(cmd.getName().equalsIgnoreCase("fix")) {
-            if(sender instanceof Player) {
-                //if(!sender.hasPermission("redfun.fix")) {
-                //    sender.sendMessage("§7Du hast §6keine Berechtigung §7dafür!");
-                //    return false;
-                //}
+            sender.sendMessage("/randomtp [mode] <player>");
+            sender.sendMessage("Available mode's: onaction, ontimer");
+        }
+        
+        // FIXLOCATION
+        else if(cmd.getName().equalsIgnoreCase("fix"))
+        {
+            if(!hasPermission(p, cmd.getName(), -1))
+            {
+                return true;
+            }
+            if(sender instanceof Player)
+            {
                 Player pfix = (Player) sender;
                 fixLocation(pfix);
                 pfix.sendMessage(ChatColor.GOLD + "Woosh!");
                 return true;
-            } else {
-                System.out.println("Dieser Command ist nur fuer Spieler.");
             }
- // NOFUN           
-        } else if(cmd.getName().equalsIgnoreCase("nofun")) {
-            if(sender instanceof Player) {
-                if(!sender.hasPermission("redfun.nofun")) {
-                    sender.sendMessage("§7Du hast §6keine Berechtigung §7dafür!");
-                    return false;
-                }
+            else
+            {
+                System.out.println("Dieser Command ist nur fuer Spieler.");
+            }           
+        }
+        
+         // NOFUN
+        else if(cmd.getName().equalsIgnoreCase("nofun"))
+        {
+            if(!hasPermission(p, cmd.getName(), -1))
+            {
+                return true;
             }
             if(args.length == 1) {
-                if(getServer().getPlayer(args[0]).isOnline()) {
-                    if(tasks.containsKey(args[0] + "_spam")) {
+                if(getServer().getPlayer(args[0]).isOnline())
+                {
+                    if(tasks.containsKey(args[0] + "_spam"))
+                    {
                         messages.remove(args[0]);
                         tasks.get(args[0] + "_spam").cancel();
                         tasks.remove(args[0] + "_spam");
                         sender.sendMessage("Spam für den Spieler beendet.");
                     }
-                    if(tasks.containsKey(args[0] + "_tp")) {
+                    if(tasks.containsKey(args[0] + "_tp"))
+                    {
                         tasks.get(args[0] + "_tp").cancel();
                         tasks.remove(args[0] + "_tp");
-                        sender.sendMessage("RandomTp für den Spieler beendet. (T)");
+                        sender.sendMessage("RandomTp (Timer) für den Spieler beendet.");
                     }
-                    if(onInteract.containsKey(args[0])){
+                    if(onInteract.containsKey(args[0]))
+                    {
                         onInteract.remove(args[0]);
-                        sender.sendMessage("RandomTp für den Spieler beendet. (A)");
+                        sender.sendMessage("RandomTp (onAction) für den Spieler beendet.");
                     }
-                    //weitere Tasks zum beenden
                     return true;
-                } else {
+                }
+                else
+                {
                     sender.sendMessage("Spieler offline oder nicht gefunden.");
                 }
-            } else {
-                sender.sendMessage("/nofun <player>");
             }
         }
         return false;
     }
 
 
-    protected void tpPlayer(Player p){
+    protected void tpPlayer(Player p)
+    {
         Location newloc = p.getLocation().clone();
         int rndX = (int) (Math.random()*3);
         switch(rndX) {
@@ -275,14 +284,18 @@ public class Main extends JavaPlugin
         fixLocation(p);
     }
     
-    private void fixLocation(Player p){
+    private void fixLocation(Player p)
+    {
         Location loc = p.getLocation().clone();
         Location newloc = loc;
         boolean tp = false;
-        if(!(safelocation(p.getWorld(), loc))) {
+        if(!(safelocation(p.getWorld(), loc)))
+        {
             int max = 0;
-            while(true) {
-                for(int i = loc.getBlockY(); i < 256; i++) {
+            while(true)
+            {
+                for(int i = loc.getBlockY(); i < 256; i++)
+                {
                     newloc.setY(i);
                     if(safelocation(p.getWorld(), newloc.clone())) { tp = true; break; }
                     else if(safelocation(p.getWorld(), setX(newloc.clone(), +1))) { tp = true; newloc.setX(newloc.getBlockX() +1); break; } 
@@ -290,7 +303,8 @@ public class Main extends JavaPlugin
                     else if(safelocation(p.getWorld(), setZ(newloc.clone(), +1))) { tp = true; newloc.setZ(newloc.getBlockZ() +1); break; } 
                     else if(safelocation(p.getWorld(), setZ(newloc.clone(), -1))) { tp = true; newloc.setZ(newloc.getBlockZ() -1); break; }
                 }
-                for(int i = loc.getBlockY(); i > 0; i--) {
+                for(int i = loc.getBlockY(); i > 0; i--)
+                {
                     newloc.setY(i);
                     if(safelocation(p.getWorld(), newloc.clone())) { tp = true; break; }
                     else if(safelocation(p.getWorld(), setX(newloc.clone(), +1))) { tp = true; newloc.setX(newloc.getBlockX() +1); break; } 
@@ -327,31 +341,19 @@ public class Main extends JavaPlugin
         int b2 = (int) (wrld.getBlockTypeIdAt(loc.getBlockX(), loc.getBlockY()+1, loc.getBlockZ()));
         int b1 = (int) (wrld.getBlockTypeIdAt(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()));
         int b0 = (int) (wrld.getBlockTypeIdAt(loc.getBlockX(), loc.getBlockY()-1, loc.getBlockZ()));
-        if(notDangerous(b2) && notDangerous(b1) && isSolid(b0)) {
-            return true;
-        } else {
-            return false;
-        }
+        return notDangerous(b2) && notDangerous(b1) && isSolid(b0);
     }
     
     private boolean isSolid(int blockid) {
         String ids = (String) (",1,2,3,4,5,7,12,13,14,15,16,17,18,19,20,21,22,23,24,25,29,33,35,41,42,43,44,45,46,47,48,49,52,53,54,56,57,58,60,61,62,67,73,74,79,80,82,84,86,87,88,87,91,92,97,98,99,100,101,102,103,108,109,110,111,112,114,116,117,118,120,121,123,124,125,126,128,129,130,133,134,135,136,137,138,144,145,146,152,153,154,155,158,159,170,172,173,");
         String bid = blockid + "";
-        if(ids.contains("," + bid + ",")) {
-            return true;
-        } else {
-            return false;
-        }
+        return ids.contains("," + bid + ",");
     }
     
     private boolean notDangerous(int blockid) {
         String ids = (String) (",0,6,8,9,31,32,37,38,39,40,50,55,59,63,68,69,70,71,72,75,76,77,78,83,93,94,96,104,105,106,111,115,131,132,147,148,149,150,171,");
         String bid = blockid + "";
-        if(ids.contains("," + bid + ",") ) {
-            return true;
-        } else {
-            return false;
-        }
+        return ids.contains("," + bid + ",");
     }
     
     private String getMsg(String[] args){
