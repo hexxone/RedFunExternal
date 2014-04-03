@@ -1,0 +1,9 @@
+name: RedFunExternal
+version: 1.0
+main: me.thexbasic.RedFunExternal.Main
+author: THExBASIC
+commands:
+#Commands
+  redfun:
+    description: Shows the actual build information.
+    usgae: /<command>
